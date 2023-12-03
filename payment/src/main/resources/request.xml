@@ -1,0 +1,12 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/"
+                  xmlns:gs="http://model.payment.example.com">
+    <soapenv:Header/>
+    <soapenv:Body>
+        <gs:getPaymentRequest>
+            <gs:id>123456-123456</gs:id>
+            <gs:cardNumber>98889-121-21-2-1</gs:cardNumber>
+            <gs:paymentId>1245gf</gs:paymentId>
+            <gs:amount>250.121</gs:amount>
+        </gs:getPaymentRequest>
+    </soapenv:Body>
+</soapenv:Envelope>

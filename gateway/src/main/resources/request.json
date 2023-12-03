@@ -1,0 +1,23 @@
+{
+    "id": null,
+    "payment": {
+        "cardNumber": "4101-2012-12012-1121",
+        "paymentId": "87h6512ab21",
+        "amount": 251.45
+    },
+    "order": [
+        {
+            "name": "mleko",
+            "amount": 2
+        },
+        {
+            "name": "jogurt naturalny",
+            "amount": 1
+        }
+    ],
+    "user": {
+        "email": "jan@gmail.com",
+        "firstName": "Jan",
+        "lastName": "Kowalski"
+    }
+}
