@@ -48,3 +48,16 @@ services:
     container_name: payment
     ports:
       - "8082:8080"
+
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8083:8080"
+    environment:
+      SERVER_PORT: 8080
+      KAFKA_HOST: kafka:29092
+      PAYMENT_HOST: payment:8080
+    depends_on:
+      - kafka
+      - payment

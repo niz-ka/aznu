@@ -7,6 +7,7 @@ import org.apache.camel.converter.jaxb.JaxbDataFormat;
 import org.apache.camel.model.rest.RestBindingMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.example.gateway.xml.model.GetPaymentResponse;
 import com.example.gateway.xml.model.GetPaymentRequest;
@@ -20,6 +21,13 @@ public class GatewayRouter extends RouteBuilder {
 
     private final static Logger logger = LoggerFactory.getLogger(GatewayRouter.class);
 
+    @Value("${kafka.host}")
+    private String kafkaHost;
+
+    @Value("${payment.host}")
+    private String paymentHost;
+
+
     @Override
     public void configure() throws Exception {
         api();
@@ -28,6 +36,9 @@ public class GatewayRouter extends RouteBuilder {
     }
 
     public void api() {
+        restConfiguration()
+                .enableCORS(true);
+
         rest("/shopping")
                 .post()
                 .description("Submit Online Order")
@@ -75,7 +86,7 @@ public class GatewayRouter extends RouteBuilder {
         from("direct:callPaymentService")
                 .setBody(exchange -> GetPaymentRequest.construct(exchange.getMessage().getBody(OnlineOrderRequest.class)))
                 .marshal().jaxb()
-                .to("spring-ws:http://localhost:8082/ws")
+                .to(String.format("spring-ws:http://%s/ws", paymentHost))
                 .unmarshal(new JaxbDataFormat(GetPaymentResponse.class.getPackage().getName()))
                 .to("sql:UPDATE ONLINE_ORDERS SET PAYMENT_STATUS = :#${body.status} WHERE id = :#${header.id}");
 
@@ -83,15 +94,15 @@ public class GatewayRouter extends RouteBuilder {
         from("direct:sendMessageToBroker")
                 .log("${body}")
                 .marshal().json()
-                .to("kafka:input-topic?brokers=127.0.0.1:9092&valueSerializer=org.apache.kafka.common.serialization.ByteArraySerializer");
+                .to(String.format("kafka:input-topic?brokers=%s&valueSerializer=org.apache.kafka.common.serialization.ByteArraySerializer", kafkaHost));
 
         // Receive responses from OrderService via Kafka
-        from("kafka:output-topic-order?brokers=127.0.0.1:9092&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer")
+        from(String.format("kafka:output-topic-order?brokers=%s&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer", kafkaHost))
                 .unmarshal(new JacksonDataFormat(OrderServiceResponse.class))
                 .to("sql:UPDATE ONLINE_ORDERS SET ORDER_STATUS = :#${body.status} WHERE id = :#${body.id}");
 
         // Receive responses from UserService via Kafka
-        from("kafka:output-topic-user?brokers=127.0.0.1:9092&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer")
+        from(String.format("kafka:output-topic-user?brokers=%s&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer", kafkaHost))
                 .unmarshal(new JacksonDataFormat(UserServiceResponse.class))
                 .to("sql:UPDATE ONLINE_ORDERS SET USER_STATUS = :#${body.status} WHERE id = :#${body.id}");
     }
