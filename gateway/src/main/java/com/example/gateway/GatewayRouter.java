@@ -37,7 +37,12 @@ public class GatewayRouter extends RouteBuilder {
 
     public void api() {
         restConfiguration()
-                .enableCORS(true);
+                .enableCORS(true)
+                .contextPath("/api")
+                .apiContextPath("/docs")
+                    .apiProperty("api.title", "Online Shopping Platform API docs")
+                    .apiProperty("api.version", "1.0.0")
+                    .apiProperty("cors", "true");
 
         rest("/shopping")
                 .post()

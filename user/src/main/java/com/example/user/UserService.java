@@ -8,9 +8,11 @@ import org.springframework.stereotype.Service;
 public class UserService {
 
     public UserResponse processUser(OnlineOrderRequest request) {
+        boolean isEmailForbidden = request.getUser().getEmail().endsWith(".ru");
         UserResponse response = new UserResponse();
         response.setId(request.getId());
-        response.setStatus("completed");
+        response.setStatus(isEmailForbidden ? "failed" : "completed");
+
         return response;
     }
 }
