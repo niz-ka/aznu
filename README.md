@@ -104,3 +104,7 @@ Check for status (polling)
 uuid=$(echo $response | grep -oP '(?<="id":").*?(?=")')
 echo $(curl -H "Content-Type: application/json" "localhost:8083/api/shopping/$uuid" 2> /dev/null)
 ```
+<br>
+
+>*If you ever doubt the quality of your code, take a look at this project.*  
+*~ No philosopher has ever said*
