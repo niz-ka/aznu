@@ -6,13 +6,9 @@
 //
 
 
-package com.example.payment.model;
+package com.example.gateway.xml.model;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.*;
 
 
 /**
@@ -26,7 +22,6 @@ import jakarta.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *       &lt;sequence&gt;
  *         &lt;element name="id" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
- *         &lt;element name="status" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *       &lt;/sequence&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
@@ -37,16 +32,13 @@ import jakarta.xml.bind.annotation.XmlType;
  */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
-    "id",
-    "status"
+    "id"
 })
-@XmlRootElement(name = "getPaymentResponse")
-public class GetPaymentResponse {
+@XmlRootElement(name = "getCompensationRequest")
+public class GetCompensationRequest {
 
     @XmlElement(required = true)
     protected String id;
-    @XmlElement(required = true)
-    protected String status;
 
     /**
      * Gets the value of the id property.
@@ -72,28 +64,10 @@ public class GetPaymentResponse {
         this.id = value;
     }
 
-    /**
-     * Gets the value of the status property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getStatus() {
-        return status;
-    }
+    public static GetCompensationRequest construct(String id) {
+        GetCompensationRequest request = new GetCompensationRequest();
+        request.setId(id);
 
-    /**
-     * Sets the value of the status property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setStatus(String value) {
-        this.status = value;
+        return request;
     }
-
 }

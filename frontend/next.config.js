@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     publicRuntimeConfig: {
-        apiUrl: 'http://localhost:8083/api'
+        apiUrl: process.env.GATEWAY_HOST + '/api'
     },
 }
 

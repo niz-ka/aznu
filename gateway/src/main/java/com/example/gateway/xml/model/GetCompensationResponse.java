@@ -6,13 +6,9 @@
 //
 
 
-package com.example.payment.model;
+package com.example.gateway.xml.model;
 
-import jakarta.xml.bind.annotation.XmlAccessType;
-import jakarta.xml.bind.annotation.XmlAccessorType;
-import jakarta.xml.bind.annotation.XmlElement;
-import jakarta.xml.bind.annotation.XmlRootElement;
-import jakarta.xml.bind.annotation.XmlType;
+import jakarta.xml.bind.annotation.*;
 
 
 /**
@@ -26,7 +22,7 @@ import jakarta.xml.bind.annotation.XmlType;
  *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType"&gt;
  *       &lt;sequence&gt;
  *         &lt;element name="id" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
- *         &lt;element name="status" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
+ *         &lt;element name="message" type="{http://www.w3.org/2001/XMLSchema}string"/&gt;
  *       &lt;/sequence&gt;
  *     &lt;/restriction&gt;
  *   &lt;/complexContent&gt;
@@ -38,15 +34,15 @@ import jakarta.xml.bind.annotation.XmlType;
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "", propOrder = {
     "id",
-    "status"
+    "message"
 })
-@XmlRootElement(name = "getPaymentResponse")
-public class GetPaymentResponse {
+@XmlRootElement(name = "getCompensationResponse")
+public class GetCompensationResponse {
 
     @XmlElement(required = true)
     protected String id;
     @XmlElement(required = true)
-    protected String status;
+    protected String message;
 
     /**
      * Gets the value of the id property.
@@ -73,27 +69,27 @@ public class GetPaymentResponse {
     }
 
     /**
-     * Gets the value of the status property.
+     * Gets the value of the message property.
      * 
      * @return
      *     possible object is
      *     {@link String }
      *     
      */
-    public String getStatus() {
-        return status;
+    public String getMessage() {
+        return message;
     }
 
     /**
-     * Sets the value of the status property.
+     * Sets the value of the message property.
      * 
      * @param value
      *     allowed object is
      *     {@link String }
      *     
      */
-    public void setStatus(String value) {
-        this.status = value;
+    public void setMessage(String value) {
+        this.message = value;
     }
 
 }

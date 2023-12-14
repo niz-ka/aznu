@@ -1,6 +1,8 @@
 package com.example.gateway;
 
 import com.example.gateway.model.*;
+import com.example.gateway.xml.model.GetCompensationRequest;
+import com.example.gateway.xml.model.GetCompensationResponse;
 import org.apache.camel.builder.RouteBuilder;
 import org.apache.camel.component.jackson.JacksonDataFormat;
 import org.apache.camel.converter.jaxb.JaxbDataFormat;
@@ -40,9 +42,9 @@ public class GatewayRouter extends RouteBuilder {
                 .enableCORS(true)
                 .contextPath("/api")
                 .apiContextPath("/docs")
-                    .apiProperty("api.title", "Online Shopping Platform API docs")
-                    .apiProperty("api.version", "1.0.0")
-                    .apiProperty("cors", "true");
+                .apiProperty("api.title", "Online Shopping Platform API docs")
+                .apiProperty("api.version", "1.0.0")
+                .apiProperty("cors", "true");
 
         rest("/shopping")
                 .post()
@@ -73,7 +75,7 @@ public class GatewayRouter extends RouteBuilder {
                     exchange.getMessage().setHeader("id", id);
                     exchange.getMessage().setBody(onlineOrderRequest);
                 })
-                .to(String.format("sql:INSERT INTO ONLINE_ORDERS VALUES (:#${header.id}, '%s', '%s', '%s')",
+                .to(String.format("sql:INSERT INTO ONLINE_ORDERS VALUES (:#${header.id}, '%s', '%s', '%s', 'F')",
                         OnlineOrderStatus.SUBMITTED,
                         OnlineOrderStatus.SUBMITTED,
                         OnlineOrderStatus.SUBMITTED))
@@ -93,23 +95,62 @@ public class GatewayRouter extends RouteBuilder {
                 .marshal().jaxb()
                 .to(String.format("spring-ws:http://%s/ws", paymentHost))
                 .unmarshal(new JaxbDataFormat(GetPaymentResponse.class.getPackage().getName()))
-                .to("sql:UPDATE ONLINE_ORDERS SET PAYMENT_STATUS = :#${body.status} WHERE id = :#${header.id}");
+                .to("sql:UPDATE ONLINE_ORDERS SET PAYMENT_STATUS = :#${body.status} WHERE id = :#${header.id}")
+                .choice()
+                .when(simple("${body.status} == 'failed'"))
+                .to("direct:compensation");
 
         // Send request to OrderService and UserService via Kafka
         from("direct:sendMessageToBroker")
-                .log("${body}")
                 .marshal().json()
                 .to(String.format("kafka:input-topic?brokers=%s&valueSerializer=org.apache.kafka.common.serialization.ByteArraySerializer", kafkaHost));
 
         // Receive responses from OrderService via Kafka
         from(String.format("kafka:output-topic-order?brokers=%s&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer", kafkaHost))
                 .unmarshal(new JacksonDataFormat(OrderServiceResponse.class))
-                .to("sql:UPDATE ONLINE_ORDERS SET ORDER_STATUS = :#${body.status} WHERE id = :#${body.id}");
+                .to("sql:UPDATE ONLINE_ORDERS SET ORDER_STATUS = :#${body.status} WHERE id = :#${body.id}")
+                .choice()
+                .when(simple("${body.status} == 'failed'"))
+                .to("direct:compensation");
 
         // Receive responses from UserService via Kafka
         from(String.format("kafka:output-topic-user?brokers=%s&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer", kafkaHost))
                 .unmarshal(new JacksonDataFormat(UserServiceResponse.class))
-                .to("sql:UPDATE ONLINE_ORDERS SET USER_STATUS = :#${body.status} WHERE id = :#${body.id}");
+                .to("sql:UPDATE ONLINE_ORDERS SET USER_STATUS = :#${body.status} WHERE id = :#${body.id}")
+                .choice()
+                .when(simple("${body.status} == 'failed'"))
+                .to("direct:compensation");
+
+        // Compensation
+        from("direct:compensation")
+                .transacted()
+                .to("sql:SELECT ID, IS_COMPENSATED FROM ONLINE_ORDERS WHERE ID = :#${body.id} FOR UPDATE")
+                .choice()
+                .when(simple("${body.get(0).get('IS_COMPENSATED')} == 'F'"))
+                .process(exchange -> {
+                    List<Map<String, Object>> body = (List<Map<String, Object>>) exchange.getMessage().getBody();
+                    exchange.getMessage().setHeader("id", body.getFirst().get("ID"));
+                })
+                .log("##### Compensation started for ${header.id}")
+                .setBody(exchange -> GetCompensationRequest.construct(exchange.getMessage().getHeader("id", String.class)))
+                .marshal().jaxb()
+                .to(String.format("spring-ws:http://%s/ws", paymentHost))
+                .unmarshal(new JaxbDataFormat(GetCompensationResponse.class.getPackage().getName()))
+                .log("##### Compensation response for ${body.id} - ${body.message}")
+                .process(exchange -> {
+                    CompensationRequest compensationRequest = new CompensationRequest();
+                    compensationRequest.setId(exchange.getMessage().getHeader("id", String.class));
+                    exchange.getMessage().setBody(compensationRequest);
+                })
+                .log("BODY BODY: ${body}")
+                .marshal(new JacksonDataFormat(CompensationRequest.class))
+                .to(String.format("kafka:input-compensation-topic?brokers=%s&valueSerializer=org.apache.kafka.common.serialization.ByteArraySerializer", kafkaHost))
+                .to("sql:UPDATE ONLINE_ORDERS SET IS_COMPENSATED = 'T' WHERE ID = :#${header.id}");
+
+        from(String.format("kafka:output-compensation-topic?brokers=%s&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer", kafkaHost))
+                .unmarshal(new JacksonDataFormat(CompensationResponse.class))
+                .log("##### Compensation response for ${body.id} - ${body.message}");
+
     }
 
     public void getOnlineOrder() {

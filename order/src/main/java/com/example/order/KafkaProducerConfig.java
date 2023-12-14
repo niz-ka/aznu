@@ -1,5 +1,6 @@
 package com.example.order;
 
+import com.example.order.model.CompensationResponse;
 import com.example.order.model.OrderResponse;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import org.apache.kafka.clients.producer.ProducerConfig;
@@ -38,5 +39,25 @@ public class KafkaProducerConfig {
     @Bean
     public KafkaTemplate<String, OrderResponse> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
+    }
+
+    @Bean
+    public ProducerFactory<String, CompensationResponse> compensationProducerFactory() {
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(
+                ProducerConfig.BOOTSTRAP_SERVERS_CONFIG,
+                bootstrapAddress);
+        configProps.put(
+                ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG,
+                StringSerializer.class);
+        configProps.put(
+                ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG,
+                JsonSerializer.class);
+        return new DefaultKafkaProducerFactory<>(configProps);
+    }
+
+    @Bean
+    public KafkaTemplate<String, CompensationResponse> compensationKafkaTemplate() {
+        return new KafkaTemplate<>(compensationProducerFactory());
     }
 }

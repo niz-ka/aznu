@@ -3,11 +3,11 @@
     "payment": {
         "cardNumber": "4101-2012-12012-1121",
         "paymentId": "87h6512ab21",
-        "amount": 251.45
+        "amount": 500001.45
     },
     "order": [
         {
-            "name": "mleko",
+            "name": "beer",
             "amount": 2
         },
         {
@@ -16,7 +16,7 @@
         }
     ],
     "user": {
-        "email": "jan@gmail.com",
+        "email": "jan@gmail.ru",
         "firstName": "Jan",
         "lastName": "Kowalski"
     }
