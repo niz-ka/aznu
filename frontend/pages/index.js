@@ -92,7 +92,10 @@ const Index = () => {
                     id: job.id,
                     userStatus: responsePayload.userStatus,
                     orderStatus: responsePayload.orderStatus,
-                    paymentStatus: responsePayload.paymentStatus
+                    paymentStatus: responsePayload.paymentStatus,
+                    isUserCompensated: responsePayload.isUserCompensated,
+                    isOrderCompensated: responsePayload.isOrderCompensated,
+                    isPaymentCompensated: responsePayload.isPaymentCompensated
                 };
             }
             return jobIter;
@@ -193,9 +196,9 @@ const Index = () => {
                                 <tr key={job.id}>
                                     <td>{i + 1}</td>
                                     <td>{job.id}</td>
-                                    <td className={handleColor(job.userStatus)}>{job.userStatus}</td>
-                                    <td className={handleColor(job.orderStatus)}>{job.orderStatus}</td>
-                                    <td className={handleColor(job.paymentStatus)}>{job.paymentStatus}</td>
+                                    <td className={handleColor(job.userStatus)}>{job.userStatus}{job.isUserCompensated === 'T' ? ' (c)' : ''}</td>
+                                    <td className={handleColor(job.orderStatus)}>{job.orderStatus}{job.isOrderCompensated === 'T' ? ' (c)' : ''}</td>
+                                    <td className={handleColor(job.paymentStatus)}>{job.paymentStatus}{job.isPaymentCompensated === 'T' ? ' (c)' : ''}</td>
                                     <td><button type="button" className="btn btn-primary" onClick={e => handleRefresh(e, job)}>Refresh</button></td>
                                 </tr>
                             )

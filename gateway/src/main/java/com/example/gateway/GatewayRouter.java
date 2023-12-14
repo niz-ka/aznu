@@ -75,7 +75,7 @@ public class GatewayRouter extends RouteBuilder {
                     exchange.getMessage().setHeader("id", id);
                     exchange.getMessage().setBody(onlineOrderRequest);
                 })
-                .to(String.format("sql:INSERT INTO ONLINE_ORDERS VALUES (:#${header.id}, '%s', '%s', '%s', 'F')",
+                .to(String.format("sql:INSERT INTO ONLINE_ORDERS VALUES (:#${header.id}, '%s', '%s', '%s', 'F', 'F', 'F', 'F')",
                         OnlineOrderStatus.SUBMITTED,
                         OnlineOrderStatus.SUBMITTED,
                         OnlineOrderStatus.SUBMITTED))
@@ -145,17 +145,21 @@ public class GatewayRouter extends RouteBuilder {
                 .log("BODY BODY: ${body}")
                 .marshal(new JacksonDataFormat(CompensationRequest.class))
                 .to(String.format("kafka:input-compensation-topic?brokers=%s&valueSerializer=org.apache.kafka.common.serialization.ByteArraySerializer", kafkaHost))
-                .to("sql:UPDATE ONLINE_ORDERS SET IS_COMPENSATED = 'T' WHERE ID = :#${header.id}");
+                .to("sql:UPDATE ONLINE_ORDERS SET IS_COMPENSATED = 'T', PAYMENT_COMPENSATED = 'T' WHERE ID = :#${header.id}");
 
         from(String.format("kafka:output-compensation-topic?brokers=%s&groupId=gateway&valueDeserializer=org.apache.kafka.common.serialization.ByteArrayDeserializer", kafkaHost))
                 .unmarshal(new JacksonDataFormat(CompensationResponse.class))
-                .log("##### Compensation response for ${body.id} - ${body.message}");
-
+                .log("##### Compensation response for ${body.id} - ${body.message}")
+                .choice()
+                .when(simple("${body.message.toLowerCase().contains('order')}"))
+                .to("sql:UPDATE ONLINE_ORDERS SET ORDER_COMPENSATED = 'T' WHERE ID = :#${body.id}")
+                .otherwise()
+                .to("sql:UPDATE ONLINE_ORDERS SET USER_COMPENSATED = 'T' WHERE ID = :#${body.id}");
     }
 
     public void getOnlineOrder() {
         from("direct:get-shopping")
-                .to("sql:SELECT ID, USER_STATUS, ORDER_STATUS, PAYMENT_STATUS FROM ONLINE_ORDERS WHERE id = :#${header.id}")
+                .to("sql:SELECT ID, USER_STATUS, ORDER_STATUS, PAYMENT_STATUS, USER_COMPENSATED, ORDER_COMPENSATED, PAYMENT_COMPENSATED FROM ONLINE_ORDERS WHERE id = :#${header.id}")
                 .setBody(exchange -> StatusResponse.fromDatabase((List<Map<String, Object>>) exchange.getMessage().getBody()));
     }
 
