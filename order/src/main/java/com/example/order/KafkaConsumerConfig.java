@@ -33,6 +33,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG,
                 groupId);
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, "false");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         JsonDeserializer<OnlineOrderRequest> jsonDeserializer = new JsonDeserializer<>(OnlineOrderRequest.class);
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), jsonDeserializer);
     }
@@ -55,6 +56,7 @@ public class KafkaConsumerConfig {
         props.put(ConsumerConfig.GROUP_ID_CONFIG,
                 "consumer-order-2");
         props.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, "false");
+        props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         JsonDeserializer<CompensationRequest> jsonDeserializer = new JsonDeserializer<>(CompensationRequest.class);
         return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), jsonDeserializer);
     }
